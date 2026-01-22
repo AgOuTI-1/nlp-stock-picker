@@ -19,3 +19,4 @@ nlp_cache/
 
 # OS
 .DS_Store
+*.egg-info/
