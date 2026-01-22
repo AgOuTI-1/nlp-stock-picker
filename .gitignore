@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.venv/
+venv/
+.env
+
+# Data / caches
+data/
+nlp_cache/
+*.parquet
+*.csv
+
+# Notebooks
+.ipynb_checkpoints/
+
+# OS
+.DS_Store

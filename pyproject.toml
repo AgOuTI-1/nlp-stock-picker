@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nlp-stock-picker"
+version = "0.1.0"
+description = "Monthly-rebalanced equity ranking strategy with optional NLP sentiment overlay."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pandas>=2.0",
+  "numpy>=1.24",
+  "yfinance>=0.2.30",
+  "matplotlib>=3.7",
+  "feedparser>=6.0",
+  "pyarrow>=14.0",
+  "torch>=2.0",
+  "transformers>=4.35",
+  "sentencepiece>=0.1.99",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
