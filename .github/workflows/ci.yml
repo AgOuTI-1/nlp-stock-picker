@@ -9,10 +9,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      - run: pip install -U pip
-      - run: pip install -e .
-      - run: pip install pytest
-      - run: pytest -q
+          python-version: "3.11"
+
+      - name: Install (lightweight, deterministic)
+        run: |
+          python -m pip install -U pip
+          # Install *this repo* without pulling heavyweight deps like torch/transformers
+          pip install -e . --no-deps
+          # Install only what tests need
+          pip install pytest pandas numpy scipy yfinance matplotlib pyarrow pyyaml feedparser
+
+      - name: Run tests (force src/ import)
+        run: |
+          PYTHONPATH=src pytest -q
