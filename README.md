@@ -8,8 +8,6 @@ A research-to-production style codebase for a monthly-rebalanced equity ranking 
 - **sector-relative momentum + volatility penalty** (quant baseline)
 - **headline sentiment** (FinBERT) aggregated monthly (optional NLP overlay)
 
-This repo is a cleaned-up, modular refactor of your original notebook-style script. fileciteturn0file0
-
 ## What’s included
 
 - **Universe**: a curated, sector-balanced ticker list (editable)
@@ -29,12 +27,12 @@ pip install -U pip
 pip install -e .
 ```
 
-### 2) Run a backtest (quant-only)
+### 2) backtest (quant-only)
 ```bash
 python -m stockpicker.scripts.run_backtest --start 2017-01-31 --top-n 20 --cost-rate 0.001
 ```
 
-### 3) Build monthly sentiment cache (optional, slower)
+### 3) Build monthly sentiment cache
 ```bash
 python -m stockpicker.scripts.build_sentiment --start 2017-01-31 --max-items 30
 ```
@@ -49,7 +47,7 @@ python -m stockpicker.scripts.run_backtest --start 2017-01-31 --top-n 20 --cost-
 python -m stockpicker.scripts.make_trades --capital 10000 --top-n 20 --lambda-sent 0.25
 ```
 
-## Notes / caveats
+## caveats
 
 - Google News RSS can rate-limit; there’s a lightweight on-disk cache under `nlp_cache/`.
 - Sentiment is **headline-only** and not point-in-time perfect (RSS availability changes). Treat results as research, not trading advice.
