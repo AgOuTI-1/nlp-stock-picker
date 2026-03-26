@@ -16,10 +16,6 @@ def _get_pe(ticker: str) -> tuple[str, float | None]:
 
 
 def fetch_pe_ratios(tickers: list[str], max_workers: int = 20) -> pd.Series:
-    """
-    Fetch trailing (or forward) P/E ratios for each ticker via yfinance.
-    Uses a thread pool so 500 tickers don't take forever.
-    """
     results = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
         futures = {pool.submit(_get_pe, t): t for t in tickers}

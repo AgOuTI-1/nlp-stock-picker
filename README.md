@@ -1,84 +1,46 @@
 # NLP Stock Picker
 
-Building a monthly stock ranking system that combines momentum/volatility signals with news sentiment from FinBERT. Started this to see if NLP could actually add alpha over basic quant factors—spoiler: results are mixed but interesting.
+Ranks S&P 500 stocks by combining quant momentum signals with NLP sentiment from recent news headlines. The idea is to see if knowing what people are saying about a stock adds anything on top of price-based signals.
 
-## What this does
+## How it works
 
-Takes ~50 large-cap stocks, ranks them monthly based on:
-- **Momentum** (3 & 6 month returns)
-- **Volatility penalty** (3 month realized vol)
-- **News sentiment** (optional) - headlines scraped from Google News, scored with FinBERT
+Pulls the full S&P 500 constituent list from Wikipedia, then for each stock computes:
 
-The idea: combine what's working (momentum) with what people are saying (sentiment). In practice, sentiment helps sometimes but adds noise other times. More on that below.
+- **3 & 6 month momentum** — recent price performance
+- **Volatility** — lower is better, penalises jumpy stocks
+- **P/E ratio** — lower is better
+- **News sentiment** — recent headlines scored with FinBERT (a financial NLP model)
 
-## Quick start
+Each factor gets percentile-ranked across the whole universe so nothing dominates just because of scale, then they're averaged into a composite score.
+
+## Usage
 
 ```bash
-# Setup
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -e .
 
-# Run a basic backtest (no sentiment)
-python -m stockpicker.scripts.run_backtest --start 2017-01-31 --top-n 20 --cost-rate 0.001
-
-# Build sentiment cache (takes a while, caches to disk)
-python -m stockpicker.scripts.build_sentiment --start 2017-01-31 --max-items 30
-
-# Backtest with sentiment (lambda-sent controls weight, 0.25 = 25% sentiment / 75% quant)
-python -m stockpicker.scripts.run_backtest --start 2017-01-31 --top-n 20 --cost-rate 0.001 --lambda-sent 0.25
-
-# Generate trade sheet for next rebalance
-python -m stockpicker.scripts.make_trades --capital 10000 --top-n 20 --lambda-sent 0.25
+python main.py
 ```
 
-## What I learned
-
-**The good:**
-- Caching sentiment to parquet made backtesting way faster (~80% speedup)
-- Sector-relative momentum actually matters—comparing tech stocks to tech stocks works better than raw rankings
-- FinBERT is surprisingly good at financial headlines vs general sentiment models
-
-**The mixed:**
-- Sentiment helps in some market regimes, hurts in others. During 2020 volatility, headlines were just noise
-- Google News RSS rate limits aggressively. Had to add retry logic and local caching
-- Monthly rebalancing misses intramonth moves but keeps transaction costs reasonable
-
-**What doesn't work:**
-- High sentiment weight (>0.3) seems to add more noise than signal
-- Using more than ~30 headlines per stock per month hits diminishing returns
-- RSS headlines aren't truly point-in-time (Google's index timing is fuzzy)
+Outputs `results.csv` with the full ranked list and prints the top 20 to the terminal. Expect it to take a few minutes — fetching headlines for 500 stocks is the slow part.
 
 ## Structure
 
 ```
 src/stockpicker/
-  data/        - ticker universe + yfinance price downloads
-  features/    - momentum, volatility calcs
-  nlp/         - RSS scraping, FinBERT scoring, monthly aggregation
-  models/      - combines quant + sentiment into final rankings
-  portfolio/   - position sizing, trade generation
-  backtest/    - sim engine with transaction costs
-  scripts/     - CLI tools
+  data/         universe, prices, P/E ratios
+  nlp/          headline fetching + FinBERT scoring
+  scoring/      combines factors into final rankings
+main.py
 ```
 
-## Caveats
+## Notes
 
-- This is **research code**, not production. Don't trade real money on this
-- Google News RSS can go down or change format—there's basic error handling but it's not bulletproof
-- Sentiment scores are **headline-only**. Full article parsing would be better but way slower
-- Transaction costs are simplified (fixed % of turnover). Real slippage varies
-- No shorting, just long-only top N stocks
-
-## Ideas for improvement
-
-Things I'd try if I had more time:
-- Weight by inverse volatility instead of equal weight
-- Try different sentiment aggregation (weighted by source credibility?)
-- Add fundamental factors (P/E, P/B) to the mix
-- Test different rebalance frequencies
-- Better handling of corporate actions
+- Sentiment is headline-only — full article parsing would probably help but it's much slower
+- FinBERT works better here than general-purpose sentiment models since it's trained on financial text
+- Google News rate limits occasionally, so a handful of tickers may come back with no headlines
 
 ## License
 
-MIT - do whatever you want with it
+MIT

@@ -5,7 +5,6 @@ from transformers import pipeline
 
 
 def _fetch_headlines(ticker: str, company_name: str | None, n: int = 5) -> list[str]:
-    """Fetch up to n recent news headlines for a ticker."""
     gn = GNews(language="en", country="US", max_results=n, period="7d")
     query = f"{company_name} stock" if company_name else f"{ticker} stock"
     try:
@@ -16,10 +15,6 @@ def _fetch_headlines(ticker: str, company_name: str | None, n: int = 5) -> list[
 
 
 def _score_headlines(headlines: list[str], finbert) -> float:
-    """
-    Run FinBERT on a list of headlines and return the mean net sentiment
-    (positive score minus negative score). Returns 0.0 for empty input.
-    """
     if not headlines:
         return 0.0
 
@@ -36,24 +31,20 @@ def compute_sentiment_scores(
     tickers: list[str],
     t2name: dict[str, str] | None = None,
 ) -> pd.Series:
-    """
-    For each ticker, fetch recent headlines and score them with FinBERT.
-    Returns a Series of net sentiment scores indexed by ticker.
-    """
     t2name = t2name or {}
 
-    print("  Loading FinBERT model...")
+    print("Loading FinBERT...")
     finbert = pipeline(
         "text-classification",
         model="ProsusAI/finbert",
         return_all_scores=True,
-        device=-1,  # CPU; set to 0 if you have a GPU
+        device=-1,
     )
 
     sentiment = {}
     for i, ticker in enumerate(tickers):
         if i % 50 == 0:
-            print(f"  Sentiment: {i}/{len(tickers)}")
+            print(f"  {i}/{len(tickers)} tickers scored")
         try:
             headlines = _fetch_headlines(ticker, t2name.get(ticker))
             sentiment[ticker] = _score_headlines(headlines, finbert)
