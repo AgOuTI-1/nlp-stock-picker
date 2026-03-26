@@ -8,8 +8,8 @@ __pycache__/
 venv/
 .env
 
-# Data / caches
-data/
+# Data / caches (top-level only, not src package submodules)
+/data/
 nlp_cache/
 *.parquet
 *.csv
