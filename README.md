@@ -57,7 +57,10 @@ main.py
 | `volatility` | Annualised volatility (126-day) |
 | `pe_ratio` | Trailing or forward P/E |
 | `sentiment` | Mean FinBERT net sentiment across recent headlines |
-| `z_*` | Sector-blended z-score for each factor |
+| `z_mom_3m` / `z_mom_6m` | Sector-blended z-score for 3- and 6-month momentum |
+| `z_vol` | Sector-blended z-score for volatility (inverted: lower vol = higher score) |
+| `z_pe` | Sector-blended z-score for P/E (inverted: lower P/E = higher score) |
+| `z_sent` | Sector-blended z-score for sentiment |
 
 ## Notes
 
