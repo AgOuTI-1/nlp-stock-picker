@@ -33,9 +33,9 @@ pip install -e .
 TRANSFORMERS_OFFLINE=1 python main.py
 ```
 
-`TRANSFORMERS_OFFLINE=1` tells the FinBERT model to use its local cache and skip post-load network checks, which avoids a hang on first run after the model is cached.
+`TRANSFORMERS_OFFLINE=1` tells the FinBERT model to use its local cache and skip post-load network checks, which avoids a hang on first run after the model is cached, but this stuff is over my head, honestly. I used claude code to help me out here. Shoutout Claude Code man. Incredible product.
 
-Outputs `results.csv` with the full ranked list and prints the top 20 to the terminal. Expect it to take 20–60 minutes — fetching and scoring headlines for 500 stocks is the slow part.
+When you run, it will take a minute due to how computationally intensive FinBERT is, but eventually after ~15 mins it outputs `results.csv` with the full ranked list and prints the top 20 to the terminal. Expect it to take 20–60 minutes — fetching and scoring headlines for 500 stocks is the slow part.
 
 ## Structure
 
