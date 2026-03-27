@@ -20,7 +20,7 @@ jobs:
           # Install *this repo* without pulling heavyweight deps like torch/transformers
           pip install -e . --no-deps
           # Install only what tests need
-          pip install pytest pandas numpy scipy yfinance matplotlib pyarrow pyyaml feedparser
+          pip install pytest pandas numpy scipy yfinance matplotlib pyarrow pyyaml feedparser lxml
 
       - name: Run tests (force src/ import)
         run: |
