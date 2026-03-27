@@ -1,14 +1,35 @@
+import socket
+
 import numpy as np
 import pandas as pd
+import requests as _requests
 from gnews import GNews
 from transformers import pipeline
+
+_GNEWS_TIMEOUT = 10  # seconds per network call inside GNews
+
+# requests ignores socket.setdefaulttimeout(), so patch it directly
+_original_request = _requests.Session.request
+
+
+def _request_with_timeout(self, *args, **kwargs):
+    kwargs.setdefault("timeout", _GNEWS_TIMEOUT)
+    return _original_request(self, *args, **kwargs)
+
+
+_requests.Session.request = _request_with_timeout
 
 
 def _fetch_headlines(ticker: str, company_name: str | None, n: int = 5) -> list[str]:
     gn = GNews(language="en", country="US", max_results=n, period="7d")
     query = f"{company_name} stock" if company_name else f"{ticker} stock"
     try:
-        articles = gn.get_news(query)
+        old_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(_GNEWS_TIMEOUT)
+        try:
+            articles = gn.get_news(query)
+        finally:
+            socket.setdefaulttimeout(old_timeout)
         return [a["title"] for a in articles if a.get("title")]
     except Exception:
         return []
@@ -33,18 +54,18 @@ def compute_sentiment_scores(
 ) -> pd.Series:
     t2name = t2name or {}
 
-    print("Loading FinBERT...")
+    print("Loading FinBERT...", flush=True)
     finbert = pipeline(
         "text-classification",
         model="ProsusAI/finbert",
-        return_all_scores=True,
+        top_k=None,
         device=-1,
     )
 
     sentiment = {}
     for i, ticker in enumerate(tickers):
         if i % 50 == 0:
-            print(f"  {i}/{len(tickers)} tickers scored")
+            print(f"  {i}/{len(tickers)} tickers scored", flush=True)
         try:
             headlines = _fetch_headlines(ticker, t2name.get(ticker))
             sentiment[ticker] = _score_headlines(headlines, finbert)

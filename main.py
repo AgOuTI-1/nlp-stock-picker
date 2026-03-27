@@ -10,12 +10,12 @@ from stockpicker.nlp.sentiment import compute_sentiment_scores
 from stockpicker.scoring.score import build_scores
 
 OUTPUT_FILE = "results.csv"
-DISPLAY_COLS = ["composite_score", "mom_3m", "mom_6m", "volatility", "pe_ratio", "sentiment"]
+DISPLAY_COLS = ["sector", "composite_score", "mom_3m", "mom_6m", "volatility", "pe_ratio", "sentiment"]
 
 
 def main():
     print("Loading S&P 500 tickers...")
-    tickers, t2name = build_universe()
+    tickers, t2name, t2sector = build_universe()
 
     print(f"Fetching prices for {len(tickers)} stocks...")
     prices = fetch_prices(tickers)
@@ -27,7 +27,7 @@ def main():
     print("Fetching headlines and running sentiment...")
     sentiment = compute_sentiment_scores(list(price_factors.index), t2name)
 
-    results = build_scores(price_factors, pe, sentiment)
+    results = build_scores(price_factors, pe, sentiment, t2sector)
     results.to_csv(OUTPUT_FILE)
     print(f"\nSaved to {OUTPUT_FILE}\n")
 

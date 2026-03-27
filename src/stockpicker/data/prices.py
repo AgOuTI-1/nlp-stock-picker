@@ -25,4 +25,15 @@ def compute_momentum_volatility(prices: pd.DataFrame) -> pd.DataFrame:
 
         records[ticker] = {"mom_3m": mom_3m, "mom_6m": mom_6m, "volatility": vol}
 
-    return pd.DataFrame.from_dict(records, orient="index")
+    df = pd.DataFrame.from_dict(records, orient="index")
+
+    # Drop stocks whose factor values are extreme outliers (> 4 std devs from
+    # the cross-sectional mean). These almost always reflect M&A events,
+    # reverse splits, or data errors rather than real tradeable returns.
+    for col in df.columns:
+        col_std = df[col].std()
+        if col_std > 0:
+            zscores = (df[col] - df[col].mean()).abs() / col_std
+            df = df[zscores <= 4.0]
+
+    return df
