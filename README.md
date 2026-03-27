@@ -11,7 +11,7 @@ Pulls the full S&P 500 constituent list from Wikipedia, then for each stock comp
 - **P/E ratio** — lower is better
 - **News sentiment** — recent headlines scored with FinBERT (a financial NLP model)
 
-Each factor gets percentile-ranked across the whole universe so nothing dominates just because of scale, then they're averaged into a composite score.
+Each factor is then normalized across it's respective ticker's sector. If there is <30 companies in a given sector in the universe, then it will take the market-wide z score for that factor and blend it with the given ticker's z-score. If there is >30 companies in a given sector, then it will z-score on a sectoral basis to account for natural differences in company types: e.g. tech stocks typically have higher volatility than staples, but that doesn't explicitly mean it is a bad investment decision. It's all relative. So this is how we are getting around that.
 
 ## Usage
 
