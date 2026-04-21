@@ -3,8 +3,16 @@ import pandas as pd
 import yfinance as yf
 
 
-def fetch_prices(tickers: list[str], period: str = "1y") -> pd.DataFrame:
-    data = yf.download(tickers, period=period, auto_adjust=True, progress=False, threads=True)
+def fetch_prices(
+    tickers: list[str],
+    period: str = "1y",
+    start: str | None = None,
+    end: str | None = None,
+) -> pd.DataFrame:
+    if start is not None:
+        data = yf.download(tickers, start=start, end=end, auto_adjust=True, progress=False, threads=True)
+    else:
+        data = yf.download(tickers, period=period, auto_adjust=True, progress=False, threads=True)
     if isinstance(data.columns, pd.MultiIndex):
         return data["Close"]
     prices = data[["Close"]]
@@ -12,10 +20,16 @@ def fetch_prices(tickers: list[str], period: str = "1y") -> pd.DataFrame:
     return prices
 
 
-def compute_momentum_volatility(prices: pd.DataFrame) -> pd.DataFrame:
+def compute_momentum_volatility(
+    prices: pd.DataFrame,
+    as_of: "pd.Timestamp | None" = None,
+) -> pd.DataFrame:
     records = {}
     for ticker in prices.columns:
-        s = prices[ticker].dropna()
+        s = prices[ticker]
+        if as_of is not None:
+            s = s.loc[:as_of]
+        s = s.dropna()
         if len(s) < 130:
             continue
 
