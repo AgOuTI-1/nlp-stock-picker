@@ -5,8 +5,8 @@ import pandas as pd
 import requests
 
 _HISTORICAL_CSV_URL = (
-    "https://raw.githubusercontent.com/fja05680/sp500/main/"
-    "S%26P%20500%20Historical%20Components%20%26%20Changes(01-17-2026).csv"
+    "https://raw.githubusercontent.com/fja05680/sp500/master/"
+    "S%26P%20500%20Historical%20Components%20%26%20Changes.csv"
 )
 
 
