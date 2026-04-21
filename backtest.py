@@ -7,8 +7,8 @@ from stockpicker.backtest.engine import run_backtest
 from stockpicker.backtest.report import compute_stats, plot_results, print_stats
 
 BENCHMARK = "SPY"
-START_DATE = "2021-01-01"
-END_DATE = "2025-01-01"
+START_DATE = "2010-01-01"
+END_DATE = "2025-04-01"
 TOP_N = 30
 
 
