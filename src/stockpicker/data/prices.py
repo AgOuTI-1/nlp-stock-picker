@@ -1,6 +1,32 @@
+import time
+
 import numpy as np
 import pandas as pd
 import yfinance as yf
+
+_BATCH_SIZE = 100  # max tickers per yfinance call; larger batches overwhelm DNS
+
+
+def _download_one_batch(
+    tickers: list[str],
+    period: str,
+    start: str | None,
+    end: str | None,
+) -> pd.DataFrame:
+    """Download a single batch and return a DataFrame with one column per ticker."""
+    kwargs = dict(auto_adjust=True, progress=False, threads=True)
+    if start is not None:
+        data = yf.download(tickers, start=start, end=end, **kwargs)
+    else:
+        data = yf.download(tickers, period=period, **kwargs)
+
+    if data.empty:
+        return pd.DataFrame()
+    if isinstance(data.columns, pd.MultiIndex):
+        return data["Close"]
+    prices = data[["Close"]]
+    prices.columns = tickers
+    return prices
 
 
 def fetch_prices(
@@ -9,15 +35,23 @@ def fetch_prices(
     start: str | None = None,
     end: str | None = None,
 ) -> pd.DataFrame:
-    if start is not None:
-        data = yf.download(tickers, start=start, end=end, auto_adjust=True, progress=False, threads=True)
-    else:
-        data = yf.download(tickers, period=period, auto_adjust=True, progress=False, threads=True)
-    if isinstance(data.columns, pd.MultiIndex):
-        return data["Close"]
-    prices = data[["Close"]]
-    prices.columns = tickers
-    return prices
+    """Download closing prices, batching requests to avoid DNS overload."""
+    if len(tickers) <= _BATCH_SIZE:
+        return _download_one_batch(tickers, period, start, end)
+
+    batches = [tickers[i:i + _BATCH_SIZE] for i in range(0, len(tickers), _BATCH_SIZE)]
+    frames = []
+    for n, batch in enumerate(batches, 1):
+        print(f"  Price batch {n}/{len(batches)} ({len(batch)} tickers)...", flush=True)
+        df = _download_one_batch(batch, period, start, end)
+        if not df.empty:
+            frames.append(df)
+        if n < len(batches):
+            time.sleep(1)  # brief pause to avoid rate limiting
+
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, axis=1)
 
 
 def compute_momentum_volatility(
