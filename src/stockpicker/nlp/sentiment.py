@@ -3,6 +3,7 @@ import socket
 import numpy as np
 import pandas as pd
 import requests as _requests
+import torch
 from gnews import GNews
 from transformers import pipeline
 
@@ -54,12 +55,20 @@ def compute_sentiment_scores(
 ) -> pd.Series:
     t2name = t2name or {}
 
-    print("Loading FinBERT...", flush=True)
+    if torch.cuda.is_available():
+        device = 0
+    elif torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = -1
+
+    device_name = {0: "CUDA GPU", "mps": "Apple MPS GPU", -1: "CPU"}[device]
+    print(f"Loading FinBERT on {device_name}...", flush=True)
     finbert = pipeline(
         "text-classification",
         model="ProsusAI/finbert",
         top_k=None,
-        device=-1,
+        device=device,
     )
 
     sentiment = {}
