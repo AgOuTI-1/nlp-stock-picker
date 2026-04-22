@@ -107,6 +107,7 @@ def run_backtest(
     portfolio_returns: list[float] = []
     spy_returns: list[float] = []
     period_labels: list[str] = []
+    skip_counts = {"available": 0, "factors": 0, "rets": 0, "spy": 0}
 
     for i in range(n_periods):
         t0, t1 = rebal_dates[i], rebal_dates[i + 1]
@@ -115,29 +116,32 @@ def run_backtest(
         constituents = get_constituents_for_date(history, t0)
         available = [t for t in constituents if t in all_prices.columns and t != benchmark]
 
-        # First month diagnostics — tells us exactly where the loop breaks
-        if i == 0:
-            print(f"  [DIAG] Month {t0.date()}: constituents={len(constituents)}, "
-                  f"available={len(available)}, need={top_n}")
-            if constituents:
-                print(f"  [DIAG] Sample constituents: {constituents[:5]}")
-            if available:
-                print(f"  [DIAG] Sample available:    {available[:5]}")
-            else:
-                sample_cols = list(all_prices.columns[:5])
-                print(f"  [DIAG] No overlap — sample price cols: {sample_cols}")
+        # First 3 months: print detailed diagnostics
+        if i < 3:
+            print(f"  [DIAG] {t0.date()}: constituents={len(constituents)}, "
+                  f"in_prices={len(available)}", end="", flush=True)
 
         if len(available) < top_n:
+            if i < 3:
+                print(f" → SKIP (only {len(available)} tickers have price data, need {top_n})")
+                if not available and constituents:
+                    sample_cols = list(all_prices.columns[:5])
+                    print(f"  [DIAG]   Sample price columns:    {sample_cols}")
+                    print(f"  [DIAG]   Sample constituents:     {constituents[:5]}")
+            skip_counts["available"] += 1
             continue
 
         # Price factors
         price_subset = all_prices[available]
         factors = compute_momentum_volatility(price_subset, as_of=t0)
 
-        if i == 0:
-            print(f"  [DIAG] factors shape after momentum/vol filter: {factors.shape}")
+        if i < 3:
+            print(f", factors={len(factors)}", end="", flush=True)
 
         if factors.empty or len(factors) < top_n:
+            if i < 3:
+                print(f" → SKIP (only {len(factors)} stocks have enough price history)")
+            skip_counts["factors"] += 1
             continue
 
         # P/E for each scored stock as of t0
@@ -164,23 +168,36 @@ def run_backtest(
                 stock_rets.append(p1 / p0 - 1)
 
         if not stock_rets:
+            if i < 3:
+                print(f" → SKIP (no valid returns for portfolio stocks)")
+            skip_counts["rets"] += 1
             continue
 
         # SPY return for same period
         spy_p0 = all_prices[benchmark].loc[:t0].dropna()
         spy_p1 = all_prices[benchmark].loc[t1:].dropna()
         if spy_p0.empty or spy_p1.empty:
+            if i < 3:
+                print(f" → SKIP (SPY price missing)")
+            skip_counts["spy"] += 1
             continue
+
         spy_ret = spy_p1.iloc[0] / spy_p0.iloc[-1] - 1
 
         portfolio_returns.append(sum(stock_rets) / len(stock_rets))
         spy_returns.append(spy_ret)
         period_labels.append(t0.strftime("%Y-%m"))
 
+        if i < 3:
+            print(f", ret={portfolio_returns[-1]:+.3f} ✓")
+
         if (i + 1) % 12 == 0 or i == n_periods - 1:
             cumret = (pd.Series(portfolio_returns) + 1).prod() - 1
             print(f"  {period_labels[-1]}  ({i + 1}/{n_periods} months) "
                   f"cumulative return so far: {cumret:+.1%}", flush=True)
+
+    print(f"\n  Skip summary: {skip_counts}")
+    print(f"  Months recorded: {len(portfolio_returns)} / {n_periods}")
 
     strategy_r = pd.Series(portfolio_returns, index=period_labels, name="strategy")
     spy_r      = pd.Series(spy_returns,       index=period_labels, name=benchmark)
