@@ -13,7 +13,11 @@ def _download_one_batch(
     start: str | None,
     end: str | None,
 ) -> pd.DataFrame:
-    """Download a single batch and return a DataFrame with one column per ticker."""
+    """Download a single batch and return a DataFrame with one column per ticker.
+
+    Newer yfinance versions include failed tickers as all-NaN columns in the
+    MultiIndex result.  We drop those so they don't pollute all_prices.
+    """
     kwargs = dict(auto_adjust=True, progress=False, threads=True)
     if start is not None:
         data = yf.download(tickers, start=start, end=end, **kwargs)
@@ -23,10 +27,18 @@ def _download_one_batch(
     if data.empty:
         return pd.DataFrame()
     if isinstance(data.columns, pd.MultiIndex):
-        return data["Close"]
-    prices = data[["Close"]]
-    prices.columns = tickers
-    return prices
+        close = data["Close"]
+    else:
+        # Single-ticker download: yfinance returns flat columns
+        if len(tickers) == 1:
+            close = data[["Close"]].rename(columns={"Close": tickers[0]})
+        else:
+            close = data[["Close"]]
+            close.columns = tickers
+
+    # Drop columns where every value is NaN (yfinance silently includes failed tickers)
+    close = close.dropna(axis=1, how="all")
+    return close if not close.empty else pd.DataFrame()
 
 
 def fetch_prices(
@@ -51,7 +63,10 @@ def fetch_prices(
 
     if not frames:
         return pd.DataFrame()
-    return pd.concat(frames, axis=1)
+    result = pd.concat(frames, axis=1)
+    # Remove any duplicate column names that could arise from overlapping batches
+    result = result.loc[:, ~result.columns.duplicated()]
+    return result
 
 
 def compute_momentum_volatility(

@@ -64,7 +64,18 @@ def run_backtest(
     print("STEP 2/5  Downloading historical prices (batched)")
     print("=" * 60)
     all_prices = fetch_prices(all_tickers, start=buffer_start, end=end_date)
-    print(f"  Price data loaded: {all_prices.shape[1]} tickers × {len(all_prices)} days.\n")
+    print(f"  Price data loaded: {all_prices.shape[1]} tickers × {len(all_prices)} days.")
+
+    # Guarantee benchmark is present with valid data (it can silently fail in batches)
+    if benchmark not in all_prices.columns or all_prices[benchmark].isna().all():
+        print(f"  Benchmark ({benchmark}) missing — fetching individually...", flush=True)
+        spy_df = fetch_prices([benchmark], start=buffer_start, end=end_date)
+        if not spy_df.empty and benchmark in spy_df.columns:
+            all_prices[benchmark] = spy_df[benchmark]
+            print(f"  {benchmark} added successfully.")
+        else:
+            raise RuntimeError(f"Could not download benchmark {benchmark}. Check your internet connection.")
+    print()
 
     # ── Step 3: Historical P/E ───────────────────────────────────────────────
     print("=" * 60)

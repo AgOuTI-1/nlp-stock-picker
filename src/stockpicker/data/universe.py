@@ -77,21 +77,22 @@ def get_constituents_for_date(history: pd.DataFrame, as_of: pd.Timestamp) -> lis
     A ticker is active on as_of if:
       • it has no removal-date suffix (still in index as of the CSV's last update), OR
       • its removal date is strictly after as_of (it was removed later).
+
+    Uses an ordered dict to deduplicate: the same base ticker can appear in the CSV
+    both with and without a removal-date suffix (e.g. when re-added after removal),
+    which would otherwise create duplicate entries that break downstream column selection.
     """
     mask = history["date"] <= as_of
     if not mask.any():
         return []
     row = history[mask].iloc[-1]
     raw = [t.strip() for t in row["tickers"].split(",")]
-    result = []
+    seen: dict[str, None] = {}          # ordered set via dict keys
     for t in raw:
         rd = _removal_date(t)
-        if rd is None:
-            result.append(_base_ticker(t))       # currently active, no removal date
-        elif rd > as_of:
-            result.append(_base_ticker(t))       # removed after as_of → was active
-        # else: already removed before as_of, skip
-    return result
+        if rd is None or rd > as_of:    # active on as_of
+            seen[_base_ticker(t)] = None
+    return list(seen.keys())
 
 
 def get_all_historical_tickers(
