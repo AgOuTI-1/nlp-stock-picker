@@ -99,7 +99,10 @@ def run_backtest(
 
     n_periods = len(rebal_dates) - 1
     print(f"  {n_periods} monthly rebalances | top {top_n} stocks | equal weight")
-    print(f"  All 5 factors active: momentum (3m+6m) + volatility + P/E + sentiment\n")
+    print(f"  All 5 factors active: momentum (3m+6m) + volatility + P/E + sentiment")
+    print(f"\n  [DIAG] all_prices shape: {all_prices.shape}")
+    print(f"  [DIAG] all_prices sample columns: {list(all_prices.columns[:5])}")
+    print(f"  [DIAG] all_prices index dtype: {all_prices.index.dtype}\n")
 
     portfolio_returns: list[float] = []
     spy_returns: list[float] = []
@@ -111,12 +114,29 @@ def run_backtest(
         # Correct historical universe for this date
         constituents = get_constituents_for_date(history, t0)
         available = [t for t in constituents if t in all_prices.columns and t != benchmark]
+
+        # First month diagnostics — tells us exactly where the loop breaks
+        if i == 0:
+            print(f"  [DIAG] Month {t0.date()}: constituents={len(constituents)}, "
+                  f"available={len(available)}, need={top_n}")
+            if constituents:
+                print(f"  [DIAG] Sample constituents: {constituents[:5]}")
+            if available:
+                print(f"  [DIAG] Sample available:    {available[:5]}")
+            else:
+                sample_cols = list(all_prices.columns[:5])
+                print(f"  [DIAG] No overlap — sample price cols: {sample_cols}")
+
         if len(available) < top_n:
             continue
 
         # Price factors
         price_subset = all_prices[available]
         factors = compute_momentum_volatility(price_subset, as_of=t0)
+
+        if i == 0:
+            print(f"  [DIAG] factors shape after momentum/vol filter: {factors.shape}")
+
         if factors.empty or len(factors) < top_n:
             continue
 

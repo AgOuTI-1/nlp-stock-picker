@@ -30,7 +30,7 @@ def print_stats(strategy_stats: dict, spy_stats: dict, benchmark: str = "SPY") -
 
     print("=" * 52)
     print(f"{'Backtest Results':^52}")
-    print(f"{'(3-factor: momentum + volatility, no P/E or sentiment)':^52}")
+    print(f"{'(5-factor: momentum + volatility + P/E + sentiment)':^52}")
     print(f"{'Note: no transaction costs modeled':^52}")
     print("=" * 52)
     print(f"{'Metric':<28} {'Strategy':>10} {benchmark:>10}")
@@ -53,11 +53,11 @@ def plot_results(
 
     fig, ax = plt.subplots(figsize=(10, 5))
 
-    ax.plot((strategy_cumret * 100), label="Strategy (mom + vol)", color="#1f77b4", linewidth=2)
+    ax.plot((strategy_cumret * 100), label="Strategy (5-factor)", color="#1f77b4", linewidth=2)
     ax.plot((spy_cumret * 100), label=benchmark, color="#d62728", linewidth=2, linestyle="--")
 
     ax.axhline(0, color="black", linewidth=0.8, linestyle=":")
-    ax.set_title("Walk-Forward Backtest: Strategy vs SPY\n(3-factor: 3m momentum, 6m momentum, volatility)", fontsize=13)
+    ax.set_title("Walk-Forward Backtest: Strategy vs SPY\n(5-factor: momentum + volatility + P/E + sentiment)", fontsize=13)
     ax.set_xlabel("Rebalance Date")
     ax.set_ylabel("Cumulative Return (%)")
     ax.legend(fontsize=11)
