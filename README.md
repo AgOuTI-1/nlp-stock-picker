@@ -1,6 +1,6 @@
 # NLP Stock Picker
 
-Ranks S&P 500 stocks by combining momentum, volatility, and P/E signals with NLP sentiment from recent news headlines into a "quant score". The idea is to see if knowing what people are saying about a stock adds anything on top of price-based signals. Essentially, we're trying to add qualitative flavor to a traditional stock scoring model.
+This program was a vibe-coded project that ranks S&P 500 stocks by combining momentum, volatility, and P/E signals with NLP sentiment from recent news headlines into a "quant score". The idea is to see if knowing what people are saying about a stock adds anything on top of price-based signals. Essentially, we're trying to add qualitative flavor to a traditional stock scoring model.
 
 ## How it works
 
